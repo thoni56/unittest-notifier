@@ -1,0 +1,47 @@
+#! /bin/sh -l
+#
+# Script to run unittests, or any other command, and notify
+# user using the OS notification mechanism
+#
+# Usage:
+#   unittest-notifier [options] command ...
+#
+# All arguments will be considered the command to run
+#
+
+# Handle options
+
+# Select notifier mechanism depending on availability
+# Indicate if no known mechanism is available
+
+# MacOS - install terminal-notifier from https://github.com/julienXX/terminal-notifier or via Brew/MacPorts
+mechanism=terminal-notifier
+
+# Set up options for icons depending on mechanism
+case $mechanism in
+    terminal-notifier)
+        notifier=/Applications/terminal-notifier.app/Contents/MacOS/terminal-notifier
+        notifier=terminal-notifier
+        title='Unittests'
+        start_message='-message "Starting..."'
+        passed_message='-message "Passed"'
+        failed_message='-message "Failed"'
+        app_icon='-appIcon cgreen-icon.png'
+        start_icon='-contentImage icon-start.png'
+        pass_icon='-contentImage icon-passed.png'
+        fail_icon='-contentImage icon-failed.png'
+        ;;
+    *)
+        echo "Unknown notifier. Exiting..."
+        exit
+esac
+
+# Indicate start
+$notifier $start_icon $title $start_message
+
+# Run the command and indicate pass or fail depending on exit code
+if ${@:1} ; then
+    $notifier $pass_icon $title $passed_message
+else
+    $notifier $fail_icon $title $failed_message
+fi
