@@ -9,8 +9,6 @@
 # All arguments will be considered the command to run
 #
 
-# Handle options
-
 # Select notifier mechanism depending on availability
 # Indicate if no known mechanism is available
 
@@ -22,26 +20,69 @@ case $mechanism in
     terminal-notifier)
         notifier=/Applications/terminal-notifier.app/Contents/MacOS/terminal-notifier
         notifier=terminal-notifier
-        title='Unittests'
-        start_message='-message "Starting..."'
-        passed_message='-message "Passed"'
-        failed_message='-message "Failed"'
-        app_icon='-appIcon cgreen-icon.png'
-        start_icon='-contentImage icon-start.png'
-        pass_icon='-contentImage icon-passed.png'
-        fail_icon='-contentImage icon-failed.png'
+        title_prefix=-title
+        message_prefix=-message
+        app_icon_prefix=-appIcon
+        icon_prefix=-contentImage
         ;;
     *)
-        echo "Unknown notifier. Exiting..."
+        echo "Unknown notifier mechanism. Exiting..."
         exit
 esac
 
+# Set default values for most options
+title_text='Unittests'
+start_text="Starting..."
+passed_text="Passed"
+failed_text="Failed"
+app_icon=cgreen-icon.png
+start_icon=icon-start.png
+passed_icon=icon-passed.png
+failed_icon=icon-failed.png
+
+
+# Handle options
+while getopts ":t:" opt; do
+    case $opt in
+        t)
+            # Title
+            title_text=$OPTARG
+            shift 2
+            ;;
+        \?)
+            echo "Invalid option: -$OPTARG" >&2
+            exit 1
+            ;;
+        :)
+            echo "Option -$OPTARG requires an argument." >&2
+            exit 1
+            ;;
+    esac
+done
+
+# Is there a command?
+if test "$#" -eq 0; then
+    echo "ERROR: expecting a command to run"
+    echo
+    echo "Usage: $0 <options> <command>"
+    echo
+    echo "Currently there are no options available."
+    echo "All arguments that are not options, will be the command line that is run."
+    exit
+fi
+
+# Assemble all notifier options
+title="$title_prefix $title_text"
+start="$message_prefix $start_text $icon_prefix $start_icon"
+passed="$message_prefix $passed_text $icon_prefix $passed_icon"
+failed="$message_prefix $failed_text $icon_prefix $failed_icon"
+
 # Indicate start
-$notifier $start_icon $title $start_message
+$notifier $title $start
 
 # Run the command and indicate pass or fail depending on exit code
 if ${@:1} ; then
-    $notifier $pass_icon $title $passed_message
+    $notifier $title $passed
 else
-    $notifier $fail_icon $title $failed_message
+    $notifier $title $failed
 fi
