@@ -9,7 +9,7 @@
 # All arguments will be considered the command to run
 #
 
-# Where's the source?
+# Where's the source? The default icons are there...
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
   DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
@@ -19,15 +19,30 @@ done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 # Select notifier mechanism depending on availability
-# Indicate if no known mechanism is available
+if command -v terminal-notifier2 2>/dev/null ; then
+    mechanism=terminal-notifier
+    notifier=terminal-notifier
+elif command -v /Applications/terminal-notifier.app/Contents/MacOS/terminal-notifier 2>/dev/null ; then
+    mechanism=terminal-notifier
+    notifier=/Applications/terminal-notifier.app/Contents/MacOS/terminal-notifier
+fi
 
-# MacOS - install terminal-notifier from https://github.com/julienXX/terminal-notifier or via Brew/MacPorts
-mechanism=terminal-notifier
+# If no known mechanism available, give hints depending on OS
+if [ "$mechanism" = "" ] ; then
+    echo "ERROR: No known mechanism for notifications found."
+    os=`uname -s`
+    if [ "$os" = "Darwin" ] ; then
+        echo "Install terminal-notifier from https://github.com/julienXX/terminal-notifier or via Brew/MacPorts"
+    else
+        echo "No idea how to create nice notifications in this OS..."
+        echo "Please suggest a mechanism at https://github.com/thoni56/unittest-notifier"
+    fi
+    exit 1
+fi
 
 # Set up options for icons depending on mechanism
 case $mechanism in
     terminal-notifier)
-        notifier=terminal-notifier
         title_prefix=-title
         message_prefix=-message
         app_icon_prefix=-appIcon
@@ -48,21 +63,21 @@ start_icon="$DIR"/icon-start.png
 passed_icon="$DIR"/icon-passed.png
 failed_icon="$DIR"/icon-failed.png
 
-
 # Handle options
 while getopts ":t:" opt; do
     case $opt in
         t)
             # Title
-            title_text="$OPTARG"
+            echo $OPTARG
+            title_text="\"$OPTARG\""
             shift 2
             ;;
         \?)
-            echo "Invalid option: -$OPTARG" >&2
+            echo "ERROR: Invalid option -$OPTARG" >&2
             exit 1
             ;;
         :)
-            echo "Option -$OPTARG requires an argument." >&2
+            echo "ERROR: Option -$OPTARG requires an argument." >&2
             exit 1
             ;;
     esac
