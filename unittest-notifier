@@ -9,6 +9,15 @@
 # All arguments will be considered the command to run
 #
 
+# Where's the source?
+SOURCE="${BASH_SOURCE[0]}"
+while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
+  DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+  SOURCE="$(readlink "$SOURCE")"
+  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+done
+DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+
 # Select notifier mechanism depending on availability
 # Indicate if no known mechanism is available
 
@@ -18,7 +27,6 @@ mechanism=terminal-notifier
 # Set up options for icons depending on mechanism
 case $mechanism in
     terminal-notifier)
-        notifier=/Applications/terminal-notifier.app/Contents/MacOS/terminal-notifier
         notifier=terminal-notifier
         title_prefix=-title
         message_prefix=-message
@@ -31,14 +39,14 @@ case $mechanism in
 esac
 
 # Set default values for most options
-title_text='Unittests'
+title_text="Unittests"
 start_text="Starting..."
 passed_text="Passed"
 failed_text="Failed"
-app_icon=cgreen-icon.png
-start_icon=icon-start.png
-passed_icon=icon-passed.png
-failed_icon=icon-failed.png
+app_icon="$DIR"/cgreen-icon.png
+start_icon="$DIR"/icon-start.png
+passed_icon="$DIR"/icon-passed.png
+failed_icon="$DIR"/icon-failed.png
 
 
 # Handle options
@@ -46,7 +54,7 @@ while getopts ":t:" opt; do
     case $opt in
         t)
             # Title
-            title_text=$OPTARG
+            title_text="$OPTARG"
             shift 2
             ;;
         \?)
@@ -72,10 +80,13 @@ if test "$#" -eq 0; then
 fi
 
 # Assemble all notifier options
-title="$title_prefix $title_text"
+title="$title_prefix \"$title_text\""
 start="$message_prefix $start_text $icon_prefix $start_icon"
 passed="$message_prefix $passed_text $icon_prefix $passed_icon"
 failed="$message_prefix $failed_text $icon_prefix $failed_icon"
+
+# Debug by uncommenting this
+#notifier=/bin/echo
 
 # Indicate start
 $notifier $title $start
