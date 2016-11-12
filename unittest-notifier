@@ -1,4 +1,4 @@
-#! /bin/sh -l
+#! /bin/bash
 #
 # Script to run unittests, or any other command, and notify
 # user using the OS notification mechanism
@@ -25,6 +25,9 @@ if command -v terminal-notifier2 2>/dev/null ; then
 elif command -v /Applications/terminal-notifier.app/Contents/MacOS/terminal-notifier 2>/dev/null ; then
     mechanism=terminal-notifier
     notifier=/Applications/terminal-notifier.app/Contents/MacOS/terminal-notifier
+elif command -v notify-send 2>/dev/null ; then
+    mechanism=notify-send
+    notifier=notify-send
 fi
 
 # If no known mechanism available, give hints depending on OS
@@ -32,7 +35,9 @@ if [ "$mechanism" = "" ] ; then
     echo "ERROR: No known mechanism for notifications found."
     os=`uname -s`
     if [ "$os" = "Darwin" ] ; then
-        echo "Install terminal-notifier from https://github.com/julienXX/terminal-notifier or via Brew/MacPorts"
+        echo "Install 'terminal-notifier' from https://github.com/julienXX/terminal-notifier or via Brew/MacPorts"
+    elif [ "$os" = "Linux" ] ; then
+	echo "'notify-send' should be available for Linux. Try 'sudo <pkgmgr> install notify-send'."
     else
         echo "No idea how to create nice notifications in this OS..."
         echo "Please suggest a mechanism at https://github.com/thoni56/unittest-notifier"
@@ -48,6 +53,11 @@ case $mechanism in
         app_icon_prefix=-appIcon
         icon_prefix=-contentImage
         ;;
+    notify-send)
+	title_prefix=
+	message_prefix=
+	icon_prefix=-i
+	;;
     *)
         echo "Unknown notifier mechanism. Exiting..."
         exit
@@ -69,7 +79,7 @@ while getopts ":t:" opt; do
         t)
             # Title
             echo $OPTARG
-            title_text="\"$OPTARG\""
+            title_text="$OPTARG"
             shift 2
             ;;
         \?)
@@ -95,7 +105,7 @@ if test "$#" -eq 0; then
 fi
 
 # Assemble all notifier options
-title="$title_prefix \"$title_text\""
+title="$title_prefix $title_text"
 start="$message_prefix $start_text $icon_prefix $start_icon"
 passed="$message_prefix $passed_text $icon_prefix $passed_icon"
 failed="$message_prefix $failed_text $icon_prefix $failed_icon"
@@ -106,8 +116,16 @@ failed="$message_prefix $failed_text $icon_prefix $failed_icon"
 # Indicate start
 $notifier $title $start
 
-# Run the command and indicate pass or fail depending on exit code
-if ${@:1} ; then
+# Run the command
+${@:1}
+status=$?
+
+# Indicate pass or fail depending on exit code
+if [ $mechanism = "notify-send" ] ; then
+    # Stock notify-send can't replace notification so kill all...
+    killall notify-osd
+fi
+if [ $status ] ; then
     $notifier $title $passed
 else
     $notifier $title $failed
