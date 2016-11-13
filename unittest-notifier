@@ -172,7 +172,7 @@ if [ $mechanism = "notify-send" ] ; then
     # Stock notify-send can't replace notification so kill all...
     killall notify-osd
 fi
-if [ $status ] ; then
+if [ $status = 0 ] ; then
     "$notifier" $extra $title $passed
 else
     "$notifier" $extra $title $failed
