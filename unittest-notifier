@@ -32,12 +32,12 @@ elif command -v notify-send >/dev/null 2>&1 ; then
 elif command -v growlnotify.exe >/dev/null 2>&1 ; then
     mechanism=growlnotify
     notifier=growlnotify.exe
-elif command -v  /cygdrive/c/Program\ Files\ \(x86\)/Growl\ for\ Windows/growlnotify.exe >/dev/null 2>&1 ; then
-    mechanism=growlnotify
-    notifier=/cygdrive/c/Program\ Files\ \(x86\)/Growl\ for\ Windows/growlnotify.exe
 elif command -v  snoretoast >/dev/null 2>&1 ; then
     mechanism=snoretoast
     notifier=snoretoast
+elif command -v  /cygdrive/c/Program\ Files\ \(x86\)/Growl\ for\ Windows/growlnotify.exe >/dev/null 2>&1 ; then
+    mechanism=growlnotify
+    notifier=/cygdrive/c/Program\ Files\ \(x86\)/Growl\ for\ Windows/growlnotify.exe
 fi
 
 
@@ -57,8 +57,8 @@ if [ "$mechanism" = "" ] ; then
         echo "'sudo <pkgmgr> install notify-send'."
     elif [ "$os" = "Cygwin" ] ; then
         echo "Suggestions for notifiers on Cygwin are"
-        echo "'growlnotify' (supported) from http://www.growlforwindows.com/ and"
-        echo "'snoretoast' (untested) from https://github.com/KDE/snoretoast."
+        echo "'growlnotify' (included with Growl for Windows) from http://www.growlforwindows.com/ and"
+        echo "'snoretoast' (Windows notifications) from https://github.com/KDE/snoretoast."
     else
         echo "No idea how to create nice notifications on this OS..."
         echo "Please suggest a mechanism at https://github.com/thoni56/unittest-notifier"
@@ -90,6 +90,7 @@ case $mechanism in
         message_prefix="-m "
         app_icon_prefix=
         icon_prefix="-p "
+        extra="-appId Unittest-notifier -silent"
         ;;
     *)
         echo "Unknown notifier mechanism. Exiting..."
