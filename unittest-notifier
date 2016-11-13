@@ -18,28 +18,49 @@ while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symli
 done
 DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
+
 # Select notifier mechanism depending on availability
-if command -v terminal-notifier2 2>/dev/null ; then
+if command -v terminal-notifier >/dev/null 2>&1 ; then
     mechanism=terminal-notifier
     notifier=terminal-notifier
-elif command -v /Applications/terminal-notifier.app/Contents/MacOS/terminal-notifier 2>/dev/null ; then
+elif command -v /Applications/terminal-notifier.app/Contents/MacOS/terminal-notifier >/dev/null 2>&1 ; then
     mechanism=terminal-notifier
     notifier=/Applications/terminal-notifier.app/Contents/MacOS/terminal-notifier
-elif command -v notify-send 2>/dev/null ; then
+elif command -v notify-send >/dev/null 2>&1 ; then
     mechanism=notify-send
     notifier=notify-send
+elif command -v growlnotify.exe >/dev/null 2>&1 ; then
+    mechanism=growlnotify
+    notifier=growlnotify.exe
+elif command -v  /cygdrive/c/Program\ Files\ \(x86\)/Growl\ for\ Windows/growlnotify.exe >/dev/null 2>&1 ; then
+    mechanism=growlnotify
+    notifier=/cygdrive/c/Program\ Files\ \(x86\)/Growl\ for\ Windows/growlnotify.exe
+elif command -v  snoretoast >/dev/null 2>&1 ; then
+    mechanism=snoretoast
+    notifier=snoretoast
+fi
+
+
+os=`uname -s`
+if [[ "$os" == *"CYGWIN"* ]] ; then
+    os="Cygwin"
 fi
 
 # If no known mechanism available, give hints depending on OS
 if [ "$mechanism" = "" ] ; then
     echo "ERROR: No known mechanism for notifications found."
-    os=`uname -s`
     if [ "$os" = "Darwin" ] ; then
-        echo "Install 'terminal-notifier' from https://github.com/julienXX/terminal-notifier or via Brew/MacPorts"
+        echo "Supported notifier for Darwin/MacOS is 'terminal-notifier' from"
+        echo "https://github.com/julienXX/terminal-notifier or via Brew/MacPorts"
     elif [ "$os" = "Linux" ] ; then
-	echo "'notify-send' should be available for Linux. Try 'sudo <pkgmgr> install notify-send'."
+        echo "'notify-send' should be available for Linux. Try"
+        echo "'sudo <pkgmgr> install notify-send'."
+    elif [ "$os" = "Cygwin" ] ; then
+        echo "Suggestions for notifiers on Cygwin are"
+        echo "'growlnotify' (supported) from http://www.growlforwindows.com/ and"
+        echo "'snoretoast' (untested) from https://github.com/KDE/snoretoast."
     else
-        echo "No idea how to create nice notifications in this OS..."
+        echo "No idea how to create nice notifications on this OS..."
         echo "Please suggest a mechanism at https://github.com/thoni56/unittest-notifier"
     fi
     exit 1
@@ -48,16 +69,28 @@ fi
 # Set up options for icons depending on mechanism
 case $mechanism in
     terminal-notifier)
-        title_prefix=-title
-        message_prefix=-message
-        app_icon_prefix=-appIcon
-        icon_prefix=-contentImage
+        title_prefix="-title "
+        message_prefix="-message "
+        app_icon_prefix="-appIcon "
+        icon_prefix="-contentImage "
         ;;
     notify-send)
-	title_prefix=
-	message_prefix=
-	icon_prefix=-i
-	;;
+        title_prefix=" "
+        message_prefix=" "
+        icon_prefix="-i "
+        ;;
+    growlnotify)
+        title_prefix="/t:"
+        message_prefix=
+        icon_prefix="/i:"
+        extra="/silent:true"
+        ;;
+    snoretoast)
+        title_prefix="-t "
+        message_prefix="-m "
+        app_icon_prefix=
+        icon_prefix="-p "
+        ;;
     *)
         echo "Unknown notifier mechanism. Exiting..."
         exit
@@ -72,6 +105,19 @@ app_icon="$DIR"/cgreen-icon.png
 start_icon="$DIR"/icon-start.png
 passed_icon="$DIR"/icon-passed.png
 failed_icon="$DIR"/icon-failed.png
+
+# Then tweak depending on os and mechanism, if needed
+if [ "$os" = "Cygwin" ] ; then
+    # Need windows paths to icons
+    app_icon=`cygpath -w -a "$app_icon"`
+    start_icon=`cygpath -w -a "$start_icon"`
+    passed_icon=`cygpath -w -a "$passed_icon"`
+    failed_icon=`cygpath -w -a "$failed_icon"`
+fi
+if [ "$mechanism" = "snoretoast" ] ; then
+    # No app_icons for snoretoast
+    app_icon=
+fi
 
 # Handle options
 while getopts ":t:" opt; do
@@ -105,16 +151,16 @@ if test "$#" -eq 0; then
 fi
 
 # Assemble all notifier options
-title="$title_prefix $title_text"
-start="$message_prefix $start_text $icon_prefix $start_icon"
-passed="$message_prefix $passed_text $icon_prefix $passed_icon"
-failed="$message_prefix $failed_text $icon_prefix $failed_icon"
+title="$title_prefix$title_text"
+start="$icon_prefix$start_icon $message_prefix$start_text"
+passed="$icon_prefix$passed_icon $message_prefix$passed_text"
+failed="$icon_prefix$failed_icon $message_prefix$failed_text"
 
 # Debug by uncommenting this
 #notifier=/bin/echo
 
 # Indicate start
-$notifier $title $start
+"$notifier" $extra $title $start
 
 # Run the command
 ${@:1}
@@ -126,7 +172,7 @@ if [ $mechanism = "notify-send" ] ; then
     killall notify-osd
 fi
 if [ $status ] ; then
-    $notifier $title $passed
+    "$notifier" $extra $title $passed
 else
-    $notifier $title $failed
+    "$notifier" $extra $title $failed
 fi
