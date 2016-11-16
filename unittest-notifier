@@ -170,7 +170,7 @@ status=$?
 # Indicate pass or fail depending on exit code
 if [ $mechanism = "notify-send" ] ; then
     # Stock notify-send can't replace notification so kill all...
-    killall notify-osd
+    killall notify-osd >/dev/null 2>&1
 fi
 if [ $status = 0 ] ; then
     "$notifier" $extra $title $passed
