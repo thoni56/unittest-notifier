@@ -121,32 +121,39 @@ if [ "$mechanism" = "snoretoast" ] ; then
 fi
 
 # Handle options
-while getopts ":t:" opt; do
+while getopts ":t:v" opt; do
     case $opt in
         t)
             # Title
-            echo $OPTARG
             title_text="$OPTARG"
             shift 2
+            ;;
+        v)
+            # Verbose, show mechanism used
+            verbose=1
+            shift 1
             ;;
         \?)
             echo "ERROR: Invalid option -$OPTARG" >&2
             exit 1
             ;;
         :)
-            echo "ERROR: Option -$OPTARG requires an argument." >&2
+            echo "ERROR: Option '-$OPTARG' requires an argument." >&2
             exit 1
             ;;
     esac
 done
 
 # Is there a command?
-if test "$#" -eq 0; then
+if [ "$#" = 0 ] ; then
     echo "ERROR: expecting a command to run"
     echo
     echo "Usage: $0 <options> <command>"
     echo
-    echo "Currently there are no options available."
+    echo "Options:"
+    echo "  -t <title>    Supply title for notifications"
+    echo "  -v            Verbose mode"
+    echo ""
     echo "All arguments that are not options, will be the command line that is run."
     exit
 fi
@@ -161,6 +168,9 @@ failed="$icon_prefix$failed_icon $message_prefix$failed_text"
 #notifier=/bin/echo
 
 # Indicate start
+if [ $verbose = 1 ] ; then
+    echo "$notifier" $extra $title $start
+fi
 "$notifier" $extra $title $start
 
 # Run the command
