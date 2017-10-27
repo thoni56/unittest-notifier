@@ -12,11 +12,11 @@
 # Where's the source? The default icons are there...
 SOURCE="${BASH_SOURCE[0]}"
 while [ -h "$SOURCE" ]; do # resolve $SOURCE until the file is no longer a symlink
-  DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+  ICONDIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
   SOURCE="$(readlink "$SOURCE")"
-  [[ $SOURCE != /* ]] && SOURCE="$DIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
+  [[ $SOURCE != /* ]] && SOURCE="$ICONDIR/$SOURCE" # if $SOURCE was a relative symlink, we need to resolve it relative to the path where the symlink file was located
 done
-DIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
+ICONDIR="$( cd -P "$( dirname "$SOURCE" )" && pwd )"
 
 
 # Select notifier mechanism depending on availability
@@ -102,10 +102,10 @@ title_text="Unittests"
 start_text="Starting..."
 passed_text="Passed"
 failed_text="Failed"
-app_icon="$DIR"/cgreen-icon.png
-start_icon="$DIR"/icon-start.png
-passed_icon="$DIR"/icon-passed.png
-failed_icon="$DIR"/icon-failed.png
+app_icon="$ICONDIR"/cgreen-icon.png
+start_icon="$ICONDIR"/icon-start.png
+passed_icon="$ICONDIR"/icon-passed.png
+failed_icon="$ICONDIR"/icon-failed.png
 
 # Then tweak depending on os and mechanism, if needed
 if [ "$os" = "Cygwin" ] ; then
